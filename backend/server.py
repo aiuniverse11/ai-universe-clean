@@ -32,80 +32,54 @@ CORS(app)
 import os
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 # Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
 
 # ------------------------------------------------------------
 # SYSTEM PROMPT
 # ------------------------------------------------------------
-SYSTEM_PROMPT = """You are AI Universe, a highly intelligent, friendly, and professional AI assistant. 
-You provide accurate, detailed, and well-structured responses. 
-You can help with coding, research, business, education, creative writing, and general questions.
-Always be helpful, respectful, and thorough in your answers."""
+SYSTEM_PROMPT = """
+You are AI Universe, an advanced AI assistant created to give direct, intelligent, accurate, and human-like answers.
+
+Rules:
+- Always answer clearly and confidently.
+- Never say "based on available trends" or "I recommend cross-referencing".
+- Give practical and useful answers.
+- Speak naturally like ChatGPT.
+- Help with coding, business, education, AI, editing, and technology.
+- Keep responses modern, smart, and professional.
+"""
 
 # ------------------------------------------------------------
 # AI CHAT ROUTE
 # ------------------------------------------------------------
 @app.route("/chat", methods=["POST"])
 def chat():
-    """
-    POST /chat
-    Request Body: { "message": "user message here" }
-    Response: { "reply": "AI response here" }
-    """
     try:
-        # Get JSON data from request
         data = request.get_json()
+        user_message = data.get("message")
 
-        # Validate request data
-        if not data:
-            return jsonify({"reply": "No message received"}), 400
-
-        # Extract user message
-        user_message = data.get("message", "").strip()
-
-        # Check if message is empty
-        if not user_message:
-            return jsonify({"reply": "No message received"}), 200
-
-        # ----------------------------------------------------
-        # GROQ AI API CALL
-        # ----------------------------------------------------
         chat_completion = client.chat.completions.create(
             messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
                 {
                     "role": "user",
                     "content": user_message
                 }
             ],
-            model="llama-3.3-70b-versatile",
-            temperature=1,
-            max_tokens=1024,
-            top_p=1,
-            stream=False
+            model="llama-3.3-70b-versatile"
         )
 
-        # Extract AI response
         ai_reply = chat_completion.choices[0].message.content
 
-        # Return successful response
-        return jsonify({"reply": ai_reply}), 200
+        return jsonify({
+            "reply": ai_reply
+        })
 
-    # ----------------------------------------------------
-    # ERROR HANDLING
-    # ----------------------------------------------------
     except Exception as e:
-        # Log the error for debugging
-        print(f"Server Error: {str(e)}")
-
-        # Return error response to client
-        return jsonify({"reply": f"Server Error: {str(e)}"}), 500
-
-
+        return jsonify({
+            "error": str(e)
+        }), 500
 # ------------------------------------------------------------
 # HEALTH CHECK ROUTE
 # ------------------------------------------------------------
@@ -124,21 +98,18 @@ def home():
 # ------------------------------------------------------------
 # SERVER START
 # ------------------------------------------------------------
+
 if __name__ == "__main__":
-    # Run Flask on all network interfaces (0.0.0.0) so it's accessible
-    # from your frontend running on VS Code Live Server
-    # Port 5000 is the default Flask port
-    # debug=True enables auto-reload when code changes
     print("=" * 50)
     print("AI Universe Backend Server")
     print("=" * 50)
-    print("Server running at: http://127.0.0.1:5000")
-    print("Chat endpoint: POST http://127.0.0.1:5000/chat")
-    print("Press CTRL+C to stop the server")
+    print("Server running...")
     print("=" * 50)
 
+    port = int(os.environ.get("PORT", 5000))
+
     app.run(
-        host="0.0.0.0",   # Listen on all network interfaces
-        port=5000,         # Default Flask port
-        debug=True         # Auto-reload on code changes
+        host="0.0.0.0",
+        port=port,
+        debug=True
     )
